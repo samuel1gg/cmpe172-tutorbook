@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Confirmation')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap narrow">
+    <div class="confirm" th:classappend="${appointment.status == 'CANCELLED'} ? 'cancelled'">
+        <h1 th:text="${appointment.status == 'BOOKED'} ? 'You are booked!' : 'Appointment cancelled'">You are booked!</h1>
+        <p class="muted" th:text="'Confirmation #' + ${appointment.id}">Confirmation #1</p>
+    </div>
+    <div class="summary">
+        <p><span>Student</span><strong th:text="${appointment.customerName} + ' (' + ${appointment.customerEmail} + ')'">Student</strong></p>
+        <p><span>Tutor</span><strong th:text="${appointment.providerName}">Tutor</strong></p>
+        <p><span>Service</span><strong th:text="${appointment.serviceName}">Service</strong></p>
+        <p><span>When</span><strong th:text="${#temporals.format(appointment.start, 'EEEE, MMMM d, yyyy h:mm a')} + ' - ' + ${#temporals.format(appointment.end, 'h:mm a')}">When</strong></p>
+        <p><span>Price</span><strong th:text="${appointment.price}">$40.00</strong></p>
+        <p th:if="${appointment.notes}"><span>Notes</span><strong th:text="${appointment.notes}">notes</strong></p>
+        <p><span>Status</span><strong th:text="${appointment.status}">BOOKED</strong></p>
+    </div>
+    <a class="btn" th:href="@{/slots}">Book another session</a>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Available Slots')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap">
+    <h1>Available slots</h1>
+
+    <form class="filters" th:action="@{/slots}" method="get">
+        <label>Tutor
+            <select name="providerId">
+                <option value="">Any tutor</option>
+                <option th:each="p : ${providers}" th:value="${p.id}" th:text="${p.name}"
+                        th:selected="${criteria.providerId == p.id}">Tutor</option>
+            </select>
+        </label>
+        <label>Service
+            <select name="serviceId">
+                <option value="">Any service</option>
+                <option th:each="s : ${services}" th:value="${s.id}" th:text="${s.name}"
+                        th:selected="${criteria.serviceId == s.id}">Service</option>
+            </select>
+        </label>
+        <label>Date
+            <input type="date" name="date" th:value="${criteria.date}">
+        </label>
+        <button class="btn" type="submit">Filter</button>
+        <a th:href="@{/slots}">Clear</a>
+    </form>
+
+    <p class="muted" th:text="${slots.totalItems} + ' open slot(s) found'">12 open slots found</p>
+
+    <table class="table" th:if="${!slots.items.isEmpty()}">
+        <thead><tr><th>Date</th><th>Time</th><th>Tutor</th><th>Service</th><th>Price</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="slot : ${slots.items}">
+            <td th:text="${#temporals.format(slot.start, 'EEE, MMM d')}">Thu, Sep 25</td>
+            <td th:text="${#temporals.format(slot.start, 'h:mm a')} + ' - ' + ${#temporals.format(slot.end, 'h:mm a')}">9:00 AM - 10:00 AM</td>
+            <td th:text="${slot.providerName}">Tutor</td>
+            <td th:text="${slot.serviceName}">Service</td>
+            <td th:text="${slot.price}">$40.00</td>
+            <td><a class="btn small" th:href="@{/slots/{id}/book(id=${slot.id})}">Book</a></td>
+        </tr>
+        </tbody>
+    </table>
+    <p th:if="${slots.items.isEmpty()}" class="empty">No open slots match those filters.</p>
+
+    <nav class="pager" th:if="${slots.totalPages > 1}">
+        <a th:if="${slots.hasPrevious}"
+           th:href="@{/slots(providerId=${criteria.providerId}, serviceId=${criteria.serviceId}, date=${criteria.date}, page=${slots.page - 1}, size=${slots.size})}">&larr; Previous</a>
+        <span th:text="'Page ' + ${slots.page + 1} + ' of ' + ${slots.totalPages}">Page 1 of 3</span>
+        <a th:if="${slots.hasNext}"
+           th:href="@{/slots(providerId=${criteria.providerId}, serviceId=${criteria.serviceId}, date=${criteria.date}, page=${slots.page + 1}, size=${slots.size})}">Next &rarr;</a>
+    </nav>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

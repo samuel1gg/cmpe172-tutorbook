@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Book Appointment')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap narrow">
+    <h1>Book appointment</h1>
+    <div class="summary">
+        <p><span>Tutor</span><strong th:text="${slot.providerName}">Tutor</strong></p>
+        <p><span>Service</span><strong th:text="${slot.serviceName}">Service</strong></p>
+        <p><span>When</span><strong th:text="${#temporals.format(slot.start, 'EEEE, MMMM d, yyyy h:mm a')} + ' (' + ${slot.durationMinutes} + ' min)'">When</strong></p>
+        <p><span>Price</span><strong th:text="${slot.price}">$40.00</strong></p>
+    </div>
+
+    <form class="form" th:action="@{/slots/{id}/book(id=${slot.id})}" method="post">
+        <label>Your name <input type="text" name="name" placeholder="Filled in from your login (Milestone 2)" disabled></label>
+        <label>Email <input type="email" name="email" placeholder="Filled in from your login (Milestone 2)" disabled></label>
+        <label>What do you want help with? <textarea name="notes" rows="4" placeholder="e.g. integration by parts, chapter 7"></textarea></label>
+        <button class="btn" type="submit" disabled>Confirm booking</button>
+        <p class="muted">Submitting a booking is implemented in Milestone 2 (feature 3). This page already reads the slot from the database.</p>
+    </form>
+    <a th:href="@{/slots}">&larr; Back to slots</a>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

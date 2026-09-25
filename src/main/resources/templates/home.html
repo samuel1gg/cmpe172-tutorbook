@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Home')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap">
+    <section class="hero">
+        <h1>Book a tutoring session in minutes</h1>
+        <p>Pick a tutor, pick a subject, pick a time. TutorBook keeps every slot to one student.</p>
+        <a class="btn" th:href="@{/slots}">Browse available slots</a>
+    </section>
+
+    <section class="stats">
+        <div class="stat"><strong th:text="${home.providerCount}">4</strong><span>Tutors</span></div>
+        <div class="stat"><strong th:text="${home.serviceCount}">5</strong><span>Services</span></div>
+        <div class="stat"><strong th:text="${home.availableSlotCount}">12</strong><span>Open slots</span></div>
+    </section>
+
+    <h2>Our tutors</h2>
+    <div class="cards">
+        <article class="card" th:each="p : ${home.providers}">
+            <h3 th:text="${p.name}">Tutor</h3>
+            <p class="tag" th:text="${p.specialty}">Specialty</p>
+            <p th:text="${p.bio}">Bio</p>
+            <a th:href="@{/slots(providerId=${p.id})}">See open slots &rarr;</a>
+        </article>
+    </div>
+
+    <h2>Services</h2>
+    <table class="table">
+        <thead><tr><th>Service</th><th>Length</th><th>Price</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="s : ${home.services}">
+            <td><strong th:text="${s.name}">Service</strong><br><small th:text="${s.description}">desc</small></td>
+            <td th:text="${s.durationMinutes} + ' min'">60 min</td>
+            <td th:text="${s.price}">$40.00</td>
+            <td><a th:href="@{/slots(serviceId=${s.id})}">Find a time</a></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

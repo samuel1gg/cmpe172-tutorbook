@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | TutorBook'">TutorBook</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:fragment="header" class="site-header">
+    <div class="wrap header-row">
+        <a class="brand" th:href="@{/}">Tutor<span>Book</span></a>
+        <nav>
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/slots}">Available Slots</a>
+            <a href="#" class="muted" title="Login is added in Milestone 2">Log in</a>
+        </nav>
+    </div>
+</header>
+<footer th:fragment="footer" class="site-footer">
+    <div class="wrap">TutorBook &middot; SJSU CMPE 172 Term Project &middot; Milestone 1 skeleton</div>
+</footer>
+</body>
+</html>
