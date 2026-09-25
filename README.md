@@ -81,3 +81,7 @@ src/main/resources/
 - **M2:** features 1–8 (logins, filter/paginate, book, my appointments, cancel, provider slot management)
 - **M3:** mock notification service, logging, health, metrics
 - **M4:** AI booking agent, autonomous agent, grounded Q&A (RAG)
+
+## Design documents
+
+See [`docs/`](docs): [Milestone 1 Report](docs/Milestone1_Report.pdf) · [ER Diagram](docs/ER_Diagram.png) · [Relational Schema](docs/Relational_Schema.pdf) · [Wireframes](docs/Wireframes.pdf) · [Block Diagram](docs/Block_Diagram.png)
