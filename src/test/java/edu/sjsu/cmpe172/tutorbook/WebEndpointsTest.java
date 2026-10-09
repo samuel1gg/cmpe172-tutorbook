@@ -13,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** End-to-end through Controller -> Service -> Repository -> H2 for each read endpoint. */
+/** End-to-end through Controller -> Service -> Repository -> H2 for the public read endpoints. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class WebEndpointsTest {
@@ -57,18 +57,14 @@ class WebEndpointsTest {
     }
 
     @Test
-    void bookedSlotReturns404() throws Exception {
-        mvc.perform(get("/slots/2/book")).andExpect(status().isNotFound());
-    }
-
-    @Test
-    void bookingFormAndConfirmationRender() throws Exception {
-        mvc.perform(get("/slots/1/book"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Calculus Tutoring")));
-        mvc.perform(get("/appointments/1/confirmation"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Alice Nguyen")));
+    void apiErrorsAreProblemDetailsWithoutStackTraces() throws Exception {
+        mvc.perform(get("/api/slots/2")) // slot 2 is booked -> not available
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.trace").doesNotExist());
+        mvc.perform(get("/api/slots/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test

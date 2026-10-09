@@ -44,3 +44,26 @@ select, input, textarea { font:inherit; padding:8px; border:1px solid var(--line
 .empty { background:var(--card); border:1px dashed var(--line); padding:24px; text-align:center; border-radius:12px; }
 .site-footer { color:var(--muted); font-size:.85rem; padding:24px 0; border-top:1px solid var(--line); }
 @media (max-width: 640px) { .stats { grid-template-columns:1fr; } .table { font-size:.85rem; } nav a { margin-left:10px; } }
+/* --- Milestone 2 --- */
+nav { display:flex; align-items:center; flex-wrap:wrap; }
+.logout { display:inline-flex; align-items:center; gap:8px; margin-left:18px; }
+.who { color:var(--muted); font-size:.9rem; }
+button.link { background:none; border:0; color:var(--brand); font:inherit; font-weight:500; cursor:pointer; padding:0; }
+.alert { border-radius:10px; padding:10px 14px; margin-bottom:14px; }
+.alert.ok { background:#e7f6ee; border:1px solid #b7e4c7; color:#14663a; }
+.alert.error { background:#fdecec; border:1px solid #f5c2c2; color:#a12a2a; }
+.field-error { color:#a12a2a; font-size:.85rem; font-weight:500; margin:0; }
+.btn.danger { background:#c0392b; } .btn.danger:hover { background:#992d22; }
+.btn.ghost { background:#fff; color:var(--brand); border:1px solid var(--brand); }
+.actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.actions form, .row-actions form { margin:0; }
+.row-actions { display:flex; gap:12px; align-items:center; }
+.badge { display:inline-block; border-radius:999px; padding:2px 10px; font-size:.8rem; font-weight:600; background:#eef1f7; }
+.badge.booked, .badge.open { background:#e8f0fc; color:var(--brand); }
+.badge.open { background:#e7f6ee; color:var(--ok); }
+.badge.cancelled { background:#fdf0e6; color:var(--warn); }
+.badge.completed { background:#eef1f7; color:var(--muted); }
+.error-box { text-align:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:32px; }
+.error-box .code { font-size:3rem; font-weight:800; color:var(--brand); }
+.summary.small p { font-size:.9rem; }
+h2 { margin-top:28px; }

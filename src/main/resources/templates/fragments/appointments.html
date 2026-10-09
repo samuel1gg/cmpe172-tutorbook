@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Shared appointment table. mode = 'customer' or 'provider' -->
+<table th:fragment="table(list, mode)" class="table">
+    <thead><tr>
+        <th>When</th>
+        <th th:text="${mode == 'customer'} ? 'Tutor' : 'Student'">Who</th>
+        <th>Service</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+    <tr th:each="a : ${list}">
+        <td th:text="${#temporals.format(a.start, 'EEE, MMM d, h:mm a')}">when</td>
+        <td th:text="${mode == 'customer'} ? ${a.providerName} : ${a.customerName}">who</td>
+        <td th:text="${a.serviceName}">service</td>
+        <td><span class="badge" th:classappend="${#strings.toLowerCase(a.status)}" th:text="${a.status}">BOOKED</span></td>
+        <td class="row-actions">
+            <a th:href="@{/appointments/{id}/confirmation(id=${a.id})}">Details</a>
+            <form th:if="${a.cancellable}" th:action="@{/my/appointments/{id}/cancel(id=${a.id})}" method="post">
+                <button class="btn small danger" type="submit">Cancel</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

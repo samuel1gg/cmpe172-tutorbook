@@ -39,7 +39,8 @@
             <td th:text="${slot.providerName}">Tutor</td>
             <td th:text="${slot.serviceName}">Service</td>
             <td th:text="${slot.price}">$40.00</td>
-            <td><a class="btn small" th:href="@{/slots/{id}/book(id=${slot.id})}">Book</a></td>
+            <td><a class="btn small" th:unless="${currentUser != null and currentUser.provider}"
+                   th:href="@{/slots/{id}/book(id=${slot.id})}">Book</a></td>
         </tr>
         </tbody>
     </table>

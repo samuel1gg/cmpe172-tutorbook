@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Appointments')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap">
+    <div th:replace="~{fragments/layout :: notice}"></div>
+    <h1>My appointments</h1>
+
+    <h2>Upcoming</h2>
+    <th:block th:if="${!appointments.upcoming.isEmpty()}"><table th:replace="~{fragments/appointments :: table(${appointments.upcoming}, 'customer')}"></table></th:block>
+    <p class="empty" th:if="${appointments.upcoming.isEmpty()}">No upcoming appointments. <a th:href="@{/slots}">Book one</a>.</p>
+
+    <h2>History</h2>
+    <th:block th:if="${!appointments.history.isEmpty()}"><table th:replace="~{fragments/appointments :: table(${appointments.history}, 'customer')}"></table></th:block>
+    <p class="empty" th:if="${appointments.history.isEmpty()}">No past or cancelled appointments yet.</p>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

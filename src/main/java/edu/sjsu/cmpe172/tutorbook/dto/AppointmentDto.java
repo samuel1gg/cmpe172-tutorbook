@@ -2,7 +2,7 @@ package edu.sjsu.cmpe172.tutorbook.dto;
 
 import java.time.LocalDateTime;
 
-/** A booked appointment as shown on the confirmation page. */
+/** An appointment as shown on the confirmation, "my appointments" and provider pages. */
 public record AppointmentDto(
         Long id,
         String status,
@@ -13,5 +13,6 @@ public record AppointmentDto(
         LocalDateTime start,
         LocalDateTime end,
         String price,
-        String notes) {
+        String notes,
+        boolean cancellable) {
 }

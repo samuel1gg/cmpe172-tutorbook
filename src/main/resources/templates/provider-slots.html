@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Slots')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap">
+    <div th:replace="~{fragments/layout :: notice}"></div>
+    <h1>My availability slots</h1>
+
+    <form class="filters" th:action="@{/provider/slots}" th:object="${slotForm}" method="post">
+        <label>Service
+            <select th:field="*{serviceId}">
+                <option value="">Choose...</option>
+                <option th:each="s : ${services}" th:value="${s.id}" th:text="${s.name} + ' (' + ${s.durationMinutes} + ' min)'">Service</option>
+            </select>
+            <span class="field-error" th:if="${#fields.hasErrors('serviceId')}" th:errors="*{serviceId}"></span>
+        </label>
+        <label>Date
+            <input type="date" th:field="*{date}">
+            <span class="field-error" th:if="${#fields.hasErrors('date')}" th:errors="*{date}"></span>
+        </label>
+        <label>Start time
+            <input type="time" th:field="*{startTime}">
+            <span class="field-error" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></span>
+        </label>
+        <button class="btn" type="submit">Add slot</button>
+    </form>
+
+    <table class="table" th:if="${!slots.isEmpty()}">
+        <thead><tr><th>When</th><th>Service</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="slot : ${slots}">
+            <td th:text="${#temporals.format(slot.start, 'EEE, MMM d, h:mm a')} + ' - ' + ${#temporals.format(slot.end, 'h:mm a')}">when</td>
+            <td th:text="${slot.serviceName}">service</td>
+            <td>
+                <span th:if="${slot.booked}" class="badge booked" th:text="'Booked by ' + ${slot.bookedBy}">Booked</span>
+                <span th:unless="${slot.booked}" class="badge open">Open</span>
+            </td>
+            <td>
+                <form th:unless="${slot.booked}" th:action="@{/provider/slots/{id}/remove(id=${slot.id})}" method="post">
+                    <button class="btn small danger" type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="empty" th:if="${slots.isEmpty()}">You have no upcoming slots. Add one above.</p>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

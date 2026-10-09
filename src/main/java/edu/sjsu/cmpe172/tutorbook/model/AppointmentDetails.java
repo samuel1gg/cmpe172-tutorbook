@@ -12,6 +12,7 @@ public record AppointmentDetails(
         String customerName,
         String customerEmail,
         Long slotId,
+        Long providerId,
         LocalDateTime startTime,
         LocalDateTime endTime,
         String providerName,

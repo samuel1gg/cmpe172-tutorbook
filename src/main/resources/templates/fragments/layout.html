@@ -13,12 +13,24 @@
         <nav>
             <a th:href="@{/}">Home</a>
             <a th:href="@{/slots}">Available Slots</a>
-            <a href="#" class="muted" title="Login is added in Milestone 2">Log in</a>
+            <th:block th:if="${currentUser != null and currentUser.customer}">
+                <a th:href="@{/my/appointments}">My Appointments</a>
+            </th:block>
+            <th:block th:if="${currentUser != null and currentUser.provider}">
+                <a th:href="@{/provider/slots}">My Slots</a>
+                <a th:href="@{/provider/appointments}">Bookings</a>
+            </th:block>
+            <a th:if="${currentUser == null}" th:href="@{/login}">Log in</a>
+            <form th:if="${currentUser != null}" class="logout" th:action="@{/logout}" method="post">
+                <span class="who" th:text="${currentUser.fullName} + ' (' + ${#strings.toLowerCase(currentUser.role)} + ')'">Name</span>
+                <button type="submit" class="link">Log out</button>
+            </form>
         </nav>
     </div>
 </header>
+<div th:fragment="notice" th:if="${notice}" class="alert ok" th:text="${notice}">Done</div>
 <footer th:fragment="footer" class="site-footer">
-    <div class="wrap">TutorBook &middot; SJSU CMPE 172 Term Project &middot; Milestone 1 skeleton</div>
+    <div class="wrap">TutorBook &middot; SJSU CMPE 172 Term Project &middot; Milestone 2</div>
 </footer>
 </body>
 </html>

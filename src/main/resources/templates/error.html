@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Error')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap narrow">
+    <div class="error-box">
+        <div class="code" th:text="${status}">404</div>
+        <h1 th:switch="${status}">
+            <span th:case="400">Invalid request</span>
+            <span th:case="403">Access denied</span>
+            <span th:case="404">Not found</span>
+            <span th:case="409">That didn't work</span>
+            <span th:case="*">Something went wrong</span>
+        </h1>
+        <p th:text="${message != null and !#strings.isEmpty(message)} ? ${message} : 'The request could not be completed.'">message</p>
+        <a class="btn" th:href="@{/slots}">Back to available slots</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

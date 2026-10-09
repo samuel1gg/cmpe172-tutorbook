@@ -5,7 +5,7 @@
 <header th:replace="~{fragments/layout :: header}"></header>
 <main class="wrap narrow">
     <div class="confirm" th:classappend="${appointment.status == 'CANCELLED'} ? 'cancelled'">
-        <h1 th:text="${appointment.status == 'BOOKED'} ? 'You are booked!' : 'Appointment cancelled'">You are booked!</h1>
+        <h1 th:text="${appointment.status == 'BOOKED'} ? 'You are booked!' : 'Appointment ' + ${#strings.toLowerCase(appointment.status)}">You are booked!</h1>
         <p class="muted" th:text="'Confirmation #' + ${appointment.id}">Confirmation #1</p>
     </div>
     <div class="summary">
@@ -17,7 +17,13 @@
         <p th:if="${appointment.notes}"><span>Notes</span><strong th:text="${appointment.notes}">notes</strong></p>
         <p><span>Status</span><strong th:text="${appointment.status}">BOOKED</strong></p>
     </div>
-    <a class="btn" th:href="@{/slots}">Book another session</a>
+    <div class="actions">
+        <a class="btn" th:href="@{/slots}">Book another session</a>
+        <a class="btn ghost" th:if="${currentUser.customer}" th:href="@{/my/appointments}">My appointments</a>
+        <form th:if="${appointment.cancellable}" th:action="@{/my/appointments/{id}/cancel(id=${appointment.id})}" method="post">
+            <button class="btn danger" type="submit">Cancel appointment</button>
+        </form>
+    </div>
 </main>
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
