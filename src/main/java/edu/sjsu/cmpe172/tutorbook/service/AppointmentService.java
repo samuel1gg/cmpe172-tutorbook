@@ -4,6 +4,9 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,8 @@ import edu.sjsu.cmpe172.tutorbook.exception.ForbiddenException;
 import edu.sjsu.cmpe172.tutorbook.exception.NotFoundException;
 import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 import edu.sjsu.cmpe172.tutorbook.model.AppointmentDetails;
+import edu.sjsu.cmpe172.tutorbook.notification.AppointmentEvent;
+import edu.sjsu.cmpe172.tutorbook.notification.NotificationType;
 import edu.sjsu.cmpe172.tutorbook.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.tutorbook.security.AppUser;
 
@@ -21,12 +26,17 @@ import edu.sjsu.cmpe172.tutorbook.security.AppUser;
 @Service
 public class AppointmentService {
 
+    private static final Logger log = LoggerFactory.getLogger(AppointmentService.class);
+
     private final AppointmentRepository appointmentRepository;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
-    public AppointmentService(AppointmentRepository appointmentRepository, Clock clock) {
+    public AppointmentService(AppointmentRepository appointmentRepository, Clock clock,
+                              ApplicationEventPublisher events) {
         this.appointmentRepository = appointmentRepository;
         this.clock = clock;
+        this.events = events;
     }
 
     /** One appointment; only its customer or its provider may see it. */
@@ -69,6 +79,9 @@ public class AppointmentService {
         if (appointmentRepository.cancel(appointmentId) == 0) {
             throw new SlotConflictException("This appointment was already cancelled.");
         }
+        log.info("Cancelled appointment {} (customer {})", appointmentId, user.userId());
+        // delivered only after this transaction commits (commit-then-notify)
+        events.publishEvent(new AppointmentEvent(appointmentId, NotificationType.BOOKING_CANCELLED));
     }
 
     private AppointmentDetails find(long appointmentId) {

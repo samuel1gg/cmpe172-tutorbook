@@ -2,6 +2,7 @@ package edu.sjsu.cmpe172.tutorbook.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -16,12 +17,15 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import edu.sjsu.cmpe172.tutorbook.dto.AppointmentListDto;
 import edu.sjsu.cmpe172.tutorbook.exception.ForbiddenException;
 import edu.sjsu.cmpe172.tutorbook.exception.NotFoundException;
 import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 import edu.sjsu.cmpe172.tutorbook.model.AppointmentDetails;
+import edu.sjsu.cmpe172.tutorbook.notification.AppointmentEvent;
+import edu.sjsu.cmpe172.tutorbook.notification.NotificationType;
 import edu.sjsu.cmpe172.tutorbook.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.tutorbook.security.AppUser;
 
@@ -34,8 +38,9 @@ class AppointmentServiceTest {
     static final AppUser TUTOR = new AppUser(5, "kim@x", "hash", "Kim", "PROVIDER", 2L);
 
     AppointmentRepository repo = mock(AppointmentRepository.class);
+    ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     AppointmentService service = new AppointmentService(repo,
-            Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneId.of("UTC")));
+            Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneId.of("UTC")), events);
 
     static AppointmentDetails appt(long id, long customerId, String status, LocalDateTime start) {
         return new AppointmentDetails(id, status, null, NOW.minusDays(5), customerId, "Name", "e@x",
@@ -50,6 +55,8 @@ class AppointmentServiceTest {
         service.cancel(ALICE, 3);
 
         verify(repo).cancel(3);
+        // a cancellation notification is requested (sent after commit)
+        verify(events).publishEvent(new AppointmentEvent(3, NotificationType.BOOKING_CANCELLED));
     }
 
     @Test
@@ -58,6 +65,7 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.cancel(BOB, 3)).isInstanceOf(ForbiddenException.class);
         verify(repo, never()).cancel(anyLong());
+        verify(events, never()).publishEvent(any(Object.class));
     }
 
     @Test

@@ -1,11 +1,15 @@
 # TutorBook: Tutoring Center Appointment System
 
-**SJSU CMPE 172 Term Project, Milestone 2 (Booking & Concurrency)**
+**SJSU CMPE 172 Term Project, Milestone 3 (Integration, Distribution & Deployment)**
 Author: Samuel Dinkayehu
 
 TutorBook lets students (**customers**) browse and book tutoring sessions with tutors (**providers**). It is built with **Java 17+, Spring Boot, and plain SQL over JDBC (`JdbcClient`), with no ORM**, plus Spring Security session login and Thymeleaf pages.
 
 Milestone 2 adds the full booking workflow: a role-based login with BCrypt passwords, booking, owner-only cancel, my appointments, and provider slot management. Bookings are safe under concurrency through a `@Transactional` booking with an **optimistic version check and retry**, backed by a database **unique constraint**. The Milestone 1 version is tagged [`milestone-1`](../../tree/milestone-1).
+
+Milestone 3 makes the system production-shaped: booking and cancelling send a **confirmation through a mock external notification service** across an HTTP distribution boundary, with **timeout, retry, fallback and commit-then-notify**. It also adds **logging, `GET /health`, custom metrics, a Dockerfile + docker-compose, and a GitHub Actions CI pipeline**.
+
+![CI](https://github.com/samuel1gg/cmpe172-tutorbook/actions/workflows/ci.yml/badge.svg)
 
 ## How to run
 
@@ -19,7 +23,14 @@ cd cmpe172-tutorbook
 
 Then open **http://localhost:8080**.
 
-Run the tests (61 tests, including the two-thread concurrency test):
+**With Docker** (no JDK needed):
+
+```bash
+docker compose up --build       # http://localhost:8080 ; health: http://localhost:8080/health
+docker compose down
+```
+
+Run the tests (72 tests, including the two-thread concurrency test and the notification-outage integration tests):
 
 ```bash
 ./mvnw test
@@ -48,7 +59,11 @@ Passwords are stored as BCrypt hashes. On login, the role is read from the `user
 | POST | `/provider/slots/{id}/remove` | owning provider | Remove an unbooked slot |
 | GET | `/provider/appointments` | provider | Appointments booked with me |
 | GET | `/api/slots`, `/api/providers`, `/api/services` | anyone | JSON |
-| GET | `/actuator/health` | anyone | Health check |
+| GET | `/health` | anyone | Health: database check (`SELECT 1`) + notification backlog. `UP`, `DEGRADED` (200) or `DOWN` (503) |
+| GET | `/actuator/metrics/{name}` | anyone | Metrics, e.g. `tutorbook.bookings`, `tutorbook.booking.latency`, `tutorbook.bookings.last_hour`, `tutorbook.notifications` |
+| POST | `/mock-notification-service/notifications` | the app's gateway | Mock external notification service (JSON `NotificationRequest`) |
+| GET | `/mock-notification-service/notifications` | anyone | What the mock service has "sent" |
+| PUT | `/mock-notification-service/mode/{UP\|DOWN\|SLOW}` | demo | Simulate an outage |
 
 **Status codes:** `400` invalid input · `403` wrong role or not the owner · `404` not found · `409` slot conflict. Errors never include stack traces.
 
@@ -65,6 +80,20 @@ Passwords are stored as BCrypt hashes. On login, the role is read from the `user
 
 `ConcurrentBookingTest` runs 2 threads (and 8 threads) booking the same slot at the same instant and asserts that **exactly one succeeds**.
 
+## Distribution boundary (Milestone 3)
+
+![Distribution diagram](docs/Distribution_Diagram.png)
+
+`Client → Appointment Scheduler → Notification Service`
+
+1. **Commit first, then notify.** `BookingTransaction.tryBook` / `AppointmentService.cancel` publish an `AppointmentEvent` inside their transaction. `AppointmentNotifier` is a `@TransactionalEventListener(phase = AFTER_COMMIT)`, so it runs only after the commit. A rollback means no notification, and no database lock is held while waiting on the network.
+2. **Coarse-grained DTO.** One `NotificationRequest` (`idempotencyKey`, `appointmentId`, `recipient`, `type`, `subject`, `message`) carries everything the remote service needs, in one HTTP call. It never calls back.
+3. **Gateway with fault handling.** `HttpNotificationGateway`: connect timeout 1 s, read timeout 1.5 s; retry up to 3 times with backoff 200 → 400 ms on timeouts, connection errors, 5xx and 429; no retry on other 4xx. **Fallback:** it never throws, and the notification is saved in `notification_log` as `FAILED`.
+4. **Idempotent retries.** Every attempt sends the same `Idempotency-Key` (`appointment-12-BOOKING_CONFIRMED`). The mock service stores a key once and answers `DUPLICATE` after that, and `notification_log.idempotency_key` is `UNIQUE`.
+5. **Recovery.** `NotificationRetryJob` resends `FAILED` notifications every 60 s, until `SENT` or `GAVE_UP` after 12 attempts.
+
+To simulate an outage: `curl -X PUT localhost:8080/mock-notification-service/mode/DOWN`, book a slot (it still succeeds), check `GET /health` (it is `DEGRADED`), then set the mode back to `UP`. Within a minute the retry job delivers the notification.
+
 ## Architecture
 
 ```
@@ -80,7 +109,10 @@ src/main/java/edu/sjsu/cmpe172/tutorbook/
 ├── security/     AppUser, JdbcUserDetailsService (loads users over JDBC)
 ├── controller/   Home, Slot, Appointment, Provider, Login controllers (HTML, Page Controller)
 │                 CatalogApiController (JSON)
-├── service/      BookingService (retry) + BookingTransaction (@Transactional), AppointmentService,
+├── notification/ NotificationRequest DTO, NotificationGateway + HttpNotificationGateway (timeout/retry/fallback),
+│                 AppointmentNotifier (AFTER_COMMIT), NotificationDispatcher, NotificationRetryJob, NotificationRepository
+├── mocknotification/ MockNotificationController + MockNotificationService (the mock external service)
+├── service/      BookingService (retry, metrics) + BookingTransaction (@Transactional), AppointmentService,
 │                 ProviderSlotService, CatalogService, SlotService, AppointmentStatusJob
 ├── repository/   User, Provider, ServiceOffering, Slot, Appointment repositories (SQL)
 ├── model/        Records that mirror database rows
@@ -100,10 +132,10 @@ src/main/resources/
 ## Roadmap
 
 - **M1:** design, schema, seed, layered read-only skeleton (tag `milestone-1`)
-- **M2 (this):** features 1–8 (logins, filter/paginate, book, my appointments, cancel, provider slot management)
-- **M3:** mock notification service, logging, health, metrics
+- **M2:** features 1–8 (logins, filter/paginate, book, my appointments, cancel, provider slot management)
+- **M3 (this):** mock notification service behind a gateway (timeout, retry, fallback, commit-then-notify), logging, `/health`, metrics, Docker, GitHub Actions CI
 - **M4:** AI booking agent, autonomous agent, grounded Q&A (RAG)
 
 ## Design documents
 
-See [`docs/`](docs): **[Milestone 2 Report](docs/Milestone2_Report.pdf)** · [Race condition diagram](docs/Race_Condition.png) · [Milestone 1 Report](docs/Milestone1_Report.pdf) · [ER Diagram](docs/ER_Diagram.png) · [Relational Schema](docs/Relational_Schema.pdf) · [Wireframes](docs/Wireframes.pdf) · [Block Diagram](docs/Block_Diagram.png)
+See [`docs/`](docs): **[Milestone 3 Report](docs/Milestone3_Report.pdf)** · [Distribution Diagram](docs/Distribution_Diagram.png) · [Milestone 2 Report](docs/Milestone2_Report.pdf) · [Race condition diagram](docs/Race_Condition.png) · [Milestone 1 Report](docs/Milestone1_Report.pdf) · [ER Diagram](docs/ER_Diagram.png) · [Relational Schema](docs/Relational_Schema.pdf) · [Wireframes](docs/Wireframes.pdf) · [Block Diagram](docs/Block_Diagram.png)

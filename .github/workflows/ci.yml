@@ -1,0 +1,51 @@
+# CI: on every push and pull request
+#   1. build + test  - compile with JDK 17 and run all tests (unit, concurrency,
+#                      notification-resilience integration tests)
+#   2. docker        - build the Docker image, start it, and check GET /health
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Build and run tests
+        run: ./mvnw -B verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+
+  docker:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t tutorbook:ci .
+
+      - name: Start container and check /health
+        run: |
+          docker run -d --name tutorbook -p 8080:8080 tutorbook:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health; then echo; echo "healthy"; exit 0; fi
+            sleep 2
+          done
+          docker logs tutorbook
+          exit 1

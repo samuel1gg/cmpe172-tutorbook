@@ -27,6 +27,10 @@ public class SecurityConfig {
                 // public pages
                 .requestMatchers("/", "/slots", "/login", "/error", "/403",
                         "/css/**", "/api/**", "/actuator/health", "/h2-console/**").permitAll()
+                // Milestone 3: health + metrics for monitoring, and the mock external
+                // service (it would run on its own host with its own auth in production)
+                .requestMatchers("/health", "/actuator/metrics/**",
+                        "/mock-notification-service/**").permitAll()
                 // customer-only
                 .requestMatchers("/slots/*/book", "/my/**").hasRole("CUSTOMER")
                 // provider-only
@@ -41,8 +45,9 @@ public class SecurityConfig {
             .logout(logout -> logout.logoutSuccessUrl("/?logout"))
             // wrong role -> 403 with our error page
             .exceptionHandling(ex -> ex.accessDeniedPage("/403"))
-            // H2 console runs in frames and posts without a CSRF token (dev only)
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+            // H2 console runs in frames and posts without a CSRF token (dev only);
+            // the mock service is called machine-to-machine, not from a browser form
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/mock-notification-service/**"))
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }

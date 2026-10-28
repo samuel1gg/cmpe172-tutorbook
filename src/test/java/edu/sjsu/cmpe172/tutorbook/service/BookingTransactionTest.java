@@ -18,12 +18,15 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 
 import edu.sjsu.cmpe172.tutorbook.exception.NotFoundException;
 import edu.sjsu.cmpe172.tutorbook.exception.OptimisticConflictException;
 import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 import edu.sjsu.cmpe172.tutorbook.model.SlotState;
+import edu.sjsu.cmpe172.tutorbook.notification.AppointmentEvent;
+import edu.sjsu.cmpe172.tutorbook.notification.NotificationType;
 import edu.sjsu.cmpe172.tutorbook.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.tutorbook.repository.SlotRepository;
 
@@ -35,12 +38,13 @@ class BookingTransactionTest {
 
     SlotRepository slots = mock(SlotRepository.class);
     AppointmentRepository appointments = mock(AppointmentRepository.class);
+    ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     BookingTransaction tx;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneId.of("UTC"));
-        tx = new BookingTransaction(slots, appointments, clock);
+        tx = new BookingTransaction(slots, appointments, clock, events);
     }
 
     static SlotState slot(LocalDateTime start, boolean removed, boolean booked, int version) {
@@ -55,6 +59,7 @@ class BookingTransactionTest {
 
         assertThat(tx.tryBook(CUSTOMER, SLOT, "notes")).isEqualTo(55L);
         verify(slots).bumpVersion(SLOT, 4); // version check used the value that was read
+        verify(events).publishEvent(new AppointmentEvent(55L, NotificationType.BOOKING_CONFIRMED));
     }
 
     @Test

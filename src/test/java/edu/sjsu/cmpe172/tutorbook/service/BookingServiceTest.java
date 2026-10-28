@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import edu.sjsu.cmpe172.tutorbook.exception.OptimisticConflictException;
 import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 
@@ -16,7 +18,7 @@ import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 class BookingServiceTest {
 
     BookingTransaction tx = mock(BookingTransaction.class);
-    BookingService service = new BookingService(tx);
+    BookingService service = new BookingService(tx, new SimpleMeterRegistry());
 
     @Test
     void retriesAfterAVersionConflictAndSucceeds() {

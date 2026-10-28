@@ -3,6 +3,7 @@ package edu.sjsu.cmpe172.tutorbook.service;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -12,6 +13,8 @@ import edu.sjsu.cmpe172.tutorbook.exception.NotFoundException;
 import edu.sjsu.cmpe172.tutorbook.exception.OptimisticConflictException;
 import edu.sjsu.cmpe172.tutorbook.exception.SlotConflictException;
 import edu.sjsu.cmpe172.tutorbook.model.SlotState;
+import edu.sjsu.cmpe172.tutorbook.notification.AppointmentEvent;
+import edu.sjsu.cmpe172.tutorbook.notification.NotificationType;
 import edu.sjsu.cmpe172.tutorbook.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.tutorbook.repository.SlotRepository;
 
@@ -24,6 +27,7 @@ import edu.sjsu.cmpe172.tutorbook.repository.SlotRepository;
  *        -> 0 rows means someone else changed the slot: OptimisticConflictException
  *   4. INSERT the appointment
  *        -> UNIQUE(active_slot_id) is the last line of defence (DuplicateKeyException)
+ *   5. publish AppointmentEvent; Spring delivers it after COMMIT (commit-then-notify)
  *
  * It is a separate bean from BookingService so that Spring's @Transactional
  * proxy applies (a method calling itself would bypass the proxy) and so each
@@ -35,13 +39,16 @@ public class BookingTransaction {
     private final SlotRepository slotRepository;
     private final AppointmentRepository appointmentRepository;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public BookingTransaction(SlotRepository slotRepository,
                               AppointmentRepository appointmentRepository,
-                              Clock clock) {
+                              Clock clock,
+                              ApplicationEventPublisher events) {
         this.slotRepository = slotRepository;
         this.appointmentRepository = appointmentRepository;
         this.clock = clock;
+        this.events = events;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -65,10 +72,15 @@ public class BookingTransaction {
         }
 
         // 4. create the appointment; the unique constraint is the backstop
+        long appointmentId;
         try {
-            return appointmentRepository.insertBooked(slotId, customerId, notes);
+            appointmentId = appointmentRepository.insertBooked(slotId, customerId, notes);
         } catch (DuplicateKeyException e) {
             throw new SlotConflictException("Sorry, this slot was just booked by someone else.");
         }
+
+        // 5. ask for a confirmation; delivered only AFTER this transaction commits
+        events.publishEvent(new AppointmentEvent(appointmentId, NotificationType.BOOKING_CONFIRMED));
+        return appointmentId;
     }
 }

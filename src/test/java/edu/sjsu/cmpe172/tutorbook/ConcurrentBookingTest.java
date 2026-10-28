@@ -29,10 +29,11 @@ import edu.sjsu.cmpe172.tutorbook.service.BookingService;
  * contain exactly one BOOKED appointment for the slot.
  *
  * Not @Transactional: each thread must commit its own transaction, exactly
- * like two real HTTP requests. @DirtiesContext gives later test classes a
- * fresh database.
+ * like two real HTTP requests. The extra property gives this class its OWN
+ * Spring context (fresh database, whatever ran before), and @DirtiesContext
+ * closes it afterwards so later test classes are not affected either.
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.application.name=concurrency-test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ConcurrentBookingTest {
 

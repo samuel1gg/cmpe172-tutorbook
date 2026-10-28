@@ -1,0 +1,24 @@
+# TutorBook with Docker Compose:   docker compose up --build   ->   http://localhost:8080
+#
+# The database is H2 embedded in the app (like SQLite: no separate database
+# server), so compose runs only the app container. The mock notification
+# service is a controller inside the same app; set NOTIFICATION_BASEURL to
+# point the gateway at a different notification service.
+services:
+  tutorbook:
+    build: .
+    image: tutorbook:latest
+    container_name: tutorbook
+    ports:
+      - "8080:8080"
+    environment:
+      NOTIFICATION_BASEURL: ""           # notification.base-url; blank = the in-app mock service
+      NOTIFICATION_MOCK_MODE: "UP"       # notification.mock.mode: UP, DOWN or SLOW (simulate an outage)
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=America/Los_Angeles"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
