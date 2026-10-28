@@ -35,6 +35,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * service is down or slow, and the notification is recovered later.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "spring.datasource.url=jdbc:h2:mem:notification-resilience-test;DB_CLOSE_DELAY=-1",
         "notification.connect-timeout=300ms",
         "notification.read-timeout=400ms",
         "notification.initial-backoff=20ms",

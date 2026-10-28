@@ -18,6 +18,7 @@ import edu.sjsu.cmpe172.tutorbook.service.BookingService;
  * The booking must still succeed.
  */
 @SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:notification-unreachable-test;DB_CLOSE_DELAY=-1",
         "notification.base-url=http://localhost:1",
         "notification.initial-backoff=20ms",
         "notification.retry-interval=1h"})
