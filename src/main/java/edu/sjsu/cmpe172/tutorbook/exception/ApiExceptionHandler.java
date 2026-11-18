@@ -7,6 +7,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import edu.sjsu.cmpe172.tutorbook.controller.AiApiController;
+import edu.sjsu.cmpe172.tutorbook.controller.AssistantController;
 import edu.sjsu.cmpe172.tutorbook.controller.CatalogApiController;
 import edu.sjsu.cmpe172.tutorbook.controller.HealthController;
 import edu.sjsu.cmpe172.tutorbook.mocknotification.MockNotificationController;
@@ -16,7 +18,7 @@ import edu.sjsu.cmpe172.tutorbook.mocknotification.MockNotificationController;
  * {"status":409,"title":"Conflict","detail":"..."} with no stack trace.
  */
 @RestControllerAdvice(assignableTypes = {CatalogApiController.class, HealthController.class,
-        MockNotificationController.class})
+        MockNotificationController.class, AiApiController.class, AssistantController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionHandler {
 

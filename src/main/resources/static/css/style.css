@@ -67,3 +67,18 @@ button.link { background:none; border:0; color:var(--brand); font:inherit; font-
 .error-box .code { font-size:3rem; font-weight:800; color:var(--brand); }
 .summary.small p { font-size:.9rem; }
 h2 { margin-top:28px; }
+/* Milestone 4: assistant page */
+.chat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.msg { max-width:80%; padding:10px 14px; border-radius:12px; white-space:pre-wrap; }
+.msg.user { align-self:flex-end; background:var(--brand); color:#fff; }
+.msg.bot { align-self:flex-start; background:#eef1f7; }
+.msg.wait { opacity:.6; font-style:italic; }
+.chat-form { display:flex; gap:8px; margin-top:12px; }
+.chat-form input { flex:1; }
+.examples { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0; }
+.examples button { background:#e8f0fc; color:var(--brand); border:0; border-radius:999px; padding:4px 12px; cursor:pointer; font:inherit; font-size:.85rem; }
+.ai-grid { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+.panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+.panel h3 { margin-top:0; }
+.panel pre { white-space:pre-wrap; font-size:.85rem; background:#f6f7fb; padding:8px; border-radius:8px; max-height:260px; overflow:auto; }
+@media (max-width: 760px) { .ai-grid { grid-template-columns:1fr; } }

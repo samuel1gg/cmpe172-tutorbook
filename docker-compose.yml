@@ -14,6 +14,8 @@ services:
     environment:
       NOTIFICATION_BASEURL: ""           # notification.base-url; blank = the in-app mock service
       NOTIFICATION_MOCK_MODE: "UP"       # notification.mock.mode: UP, DOWN or SLOW (simulate an outage)
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-not-set} # Milestone 4: read from your shell or a local .env file (never committed)
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
       JAVA_TOOL_OPTIONS: "-Duser.timezone=America/Los_Angeles"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]

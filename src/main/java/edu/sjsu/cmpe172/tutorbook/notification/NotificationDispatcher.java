@@ -97,14 +97,46 @@ public class NotificationDispatcher {
         return Optional.of(request);
     }
 
-    private void deliver(NotificationRequest request, int attemptsSoFar) {
+    /**
+     * Milestone 4: sends a reminder whose text was written by the ReminderAgent
+     * (the LLM). Same path as confirmations: saved as PENDING, delivered through
+     * the gateway, retried by NotificationRetryJob. The idempotency key
+     * "appointment-N-REMINDER" means an appointment gets at most ONE reminder,
+     * even if the job runs twice. Never throws; returns SENT, FAILED, GAVE_UP,
+     * DUPLICATE or ERROR.
+     */
+    public String sendReminder(AppointmentDetails a, String subject, String message) {
+        NotificationRequest request = new NotificationRequest(
+                "appointment-" + a.appointmentId() + "-" + NotificationType.REMINDER.name(),
+                a.appointmentId(), a.customerEmail(), NotificationType.REMINDER,
+                truncate(subject, 200), truncate(message, 1000));
+        try {
+            Boolean inserted = newTransaction.execute(s -> notificationRepository.insertPending(request));
+            if (!Boolean.TRUE.equals(inserted)) {
+                log.info("Reminder for appointment {} already exists; not sending it twice", a.appointmentId());
+                return "DUPLICATE";
+            }
+            return deliver(request, 0);
+        } catch (RuntimeException e) {
+            log.error("Could not send reminder for appointment {}", a.appointmentId(), e);
+            count(NotificationType.REMINDER, "error");
+            return "ERROR";
+        }
+    }
+
+    private static String truncate(String text, int max) {
+        String t = text == null ? "" : text.strip();
+        return t.length() <= max ? t : t.substring(0, max - 3) + "...";
+    }
+
+    private String deliver(NotificationRequest request, int attemptsSoFar) {
         SendResult result = gateway.send(request);
         String key = request.idempotencyKey();
         if (result.delivered()) {
             newTransaction.executeWithoutResult(s -> notificationRepository.markSent(key, result.attempts()));
             log.info("{} for appointment {} sent to {}", request.type(), request.appointmentId(), mask(request.recipient()));
             count(request.type(), "sent");
-            return;
+            return "SENT";
         }
         int total = attemptsSoFar + result.attempts();
         boolean giveUp = !result.retryableLater() || total >= props.maxTotalAttempts();
@@ -118,6 +150,7 @@ public class NotificationDispatcher {
                     key, total, result.error());
             count(request.type(), "failed");
         }
+        return status;
     }
 
     /** Builds the coarse-grained DTO: everything the remote service needs, in one object. */

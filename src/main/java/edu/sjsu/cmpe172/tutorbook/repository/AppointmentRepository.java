@@ -120,4 +120,23 @@ public class AppointmentRepository {
                 rs.getString("service_name"),
                 rs.getInt("price_cents"));
     }
+
+    /**
+     * Milestone 4 (ReminderAgent): BOOKED appointments starting in (from, until]
+     * that have not had a REMINDER notification yet, soonest first.
+     */
+    public List<AppointmentDetails> findDueForReminder(LocalDateTime from, LocalDateTime until, int limit) {
+        return jdbc.sql(SELECT_DETAILS + """
+                 WHERE a.status = 'BOOKED'
+                   AND s.start_time > :from AND s.start_time <= :until
+                   AND NOT EXISTS (SELECT 1 FROM notification_log n
+                                   WHERE n.appointment_id = a.appointment_id AND n.type = 'REMINDER')
+                 ORDER BY s.start_time
+                 LIMIT :limit""")
+                .param("from", from)
+                .param("until", until)
+                .param("limit", limit)
+                .query(AppointmentRepository::mapRow)
+                .list();
+    }
 }

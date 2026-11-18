@@ -20,6 +20,7 @@
                 <a th:href="@{/provider/slots}">My Slots</a>
                 <a th:href="@{/provider/appointments}">Bookings</a>
             </th:block>
+            <a th:if="${currentUser != null}" th:href="@{/assistant}">Assistant</a>
             <a th:if="${currentUser == null}" th:href="@{/login}">Log in</a>
             <form th:if="${currentUser != null}" class="logout" th:action="@{/logout}" method="post">
                 <span class="who" th:text="${currentUser.fullName} + ' (' + ${#strings.toLowerCase(currentUser.role)} + ')'">Name</span>
@@ -30,7 +31,7 @@
 </header>
 <div th:fragment="notice" th:if="${notice}" class="alert ok" th:text="${notice}">Done</div>
 <footer th:fragment="footer" class="site-footer">
-    <div class="wrap">TutorBook &middot; SJSU CMPE 172 Term Project &middot; Milestone 2</div>
+    <div class="wrap">TutorBook &middot; SJSU CMPE 172 Term Project &middot; Milestone 4</div>
 </footer>
 </body>
 </html>

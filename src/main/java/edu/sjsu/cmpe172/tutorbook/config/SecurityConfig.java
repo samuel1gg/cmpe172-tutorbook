@@ -35,6 +35,10 @@ public class SecurityConfig {
                 .requestMatchers("/slots/*/book", "/my/**").hasRole("CUSTOMER")
                 // provider-only
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
+                // Milestone 4: manual trigger of the autonomous reminder agent
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // (/assistant/** falls under anyRequest().authenticated(): the agent
+                //  acts as the logged-in user; /api/ask is public under /api/**)
                 // anything else (e.g. confirmation page) just needs a login
                 .anyRequest().authenticated())
             .formLogin(form -> form

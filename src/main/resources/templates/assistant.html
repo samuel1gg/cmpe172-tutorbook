@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Assistant')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="wrap">
+    <h1>TutorBook Assistant</h1>
+    <div th:if="${!aiConfigured}" class="alert">
+        The AI assistant is not configured. Set <code>GEMINI_API_KEY</code> and restart TutorBook.
+    </div>
+    <p class="muted" th:if="${aiConfigured}">
+        Powered by Gemini (<span th:text="${aiModel}">model</span>) through Spring AI.
+        Bookings and cancellations always ask you to confirm first.
+    </p>
+
+    <div class="ai-grid">
+        <section>
+            <div id="chat" class="chat">
+                <div class="msg bot">Hi! I can find open slots, book or cancel appointments, and answer questions about TutorBook's policies. What do you need?</div>
+            </div>
+            <form id="chat-form" class="chat-form">
+                <input id="chat-input" type="text" maxlength="1000" autocomplete="off"
+                       placeholder="e.g. Find the earliest calculus slot this week and book it" required>
+                <button class="btn" type="submit">Send</button>
+                <button class="btn small" id="reset" type="button" title="Start a new conversation">New</button>
+            </form>
+            <div class="examples">
+                <button type="button">What can I book this week?</button>
+                <button type="button">Find the earliest calculus slot this week and book it</button>
+                <button type="button">Show my appointments</button>
+                <button type="button">Cancel my next appointment</button>
+                <button type="button">What is the cancellation policy?</button>
+            </div>
+        </section>
+
+        <aside>
+            <div class="panel">
+                <h3>Ask a policy question</h3>
+                <p class="muted">Answered only from TutorBook's policy file (RAG).</p>
+                <form id="ask-form" class="chat-form">
+                    <input id="ask-input" type="text" maxlength="500" placeholder="e.g. Can I bring a friend?" required>
+                    <button class="btn small" type="submit">Ask</button>
+                </form>
+                <pre id="ask-answer" hidden></pre>
+            </div>
+            <div class="panel" th:if="${currentUser != null and currentUser.role == 'ADMIN'}">
+                <h3>Reminder agent</h3>
+                <p class="muted">Runs by itself every hour. Run it now for the demo:</p>
+                <button class="btn small" id="run-reminders" type="button">Run reminder agent now</button>
+                <pre id="reminder-result" hidden></pre>
+            </div>
+        </aside>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:inline="javascript">
+    const csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+    const base = /*[[@{/}]]*/ '/';
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('chat-input');
+
+    function add(text, cls) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + cls;
+        div.textContent = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        return div;
+    }
+
+    async function post(path, body) {
+        const res = await fetch(base + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: body ? JSON.stringify(body) : null
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || ('HTTP ' + res.status));
+        return data;
+    }
+
+    async function send(text) {
+        add(text, 'user');
+        const wait = add('Thinking…', 'bot wait');
+        try {
+            const data = await post('assistant/chat', { message: text });
+            wait.className = 'msg bot';
+            wait.textContent = data.reply;
+        } catch (e) {
+            wait.className = 'msg bot';
+            wait.textContent = 'Error: ' + e.message;
+        }
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text) { input.value = ''; send(text); }
+    });
+    document.querySelectorAll('.examples button').forEach(b =>
+        b.addEventListener('click', () => send(b.textContent)));
+    document.getElementById('reset').addEventListener('click', async () => {
+        await post('assistant/reset');
+        chat.innerHTML = '';
+        add('New conversation started.', 'bot');
+    });
+
+    document.getElementById('ask-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const out = document.getElementById('ask-answer');
+        out.hidden = false;
+        out.textContent = 'Looking it up…';
+        const q = document.getElementById('ask-input').value.trim();
+        const res = await fetch(base + 'api/ask?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        out.textContent = res.ok
+            ? data.answer + (data.sources.length ? '\n\nSources: ' + data.sources.join(', ') : '')
+            : 'Error: ' + (data.detail || res.status);
+    });
+
+    const runBtn = document.getElementById('run-reminders');
+    if (runBtn) runBtn.addEventListener('click', async () => {
+        const out = document.getElementById('reminder-result');
+        out.hidden = false;
+        out.textContent = 'Running…';
+        try {
+            out.textContent = JSON.stringify(await post('admin/agents/reminders/run'), null, 2);
+        } catch (e) {
+            out.textContent = 'Error: ' + e.message;
+        }
+    });
+</script>
+</body>
+</html>

@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Milestone 4: local secrets
+.env
+.DS_Store
